@@ -2,6 +2,10 @@ Tulsa Transit Database - Prototype
 ==================================
 This is a prototype of a database of Tulsa Transit information.  The end goal is to get Tulsa's buses onto Google Maps.  This hack is sponsored by [tulsa Web Devs](http://tulsawebdevs.org/).
 
+Files
+-----
+The folder `tulsa-transit-proto` is a [Google App Engine](http://code.google.com/appengine/) project.  The live version runs at *todo*, but you can run it locally once you install the [SDK](http://code.google.com/appengine/downloads.html).
+
 Google Transit Partner Program
 ------------------------------
 The process as given on the [Google Transit Partner Program page]:
