@@ -32,11 +32,11 @@
 
 <p>Your location is accurate to 
 <span id='geo_not_accurate_meters'>unknown</span>
-meters.  It need to be 100 meters or less.
+meters.  It need to be 1000 meters or less.
 </p>
 
 </div>
-<div id="map_canvas" style="width:200px; height:200px; float:right"></div>
+<div id="map_canvas" style="width:500px; height:500px; float:right"></div>
 
 <div id='geo_accurate' style='display:none'>
 <p>Please enter the following information for the stop:</p>
@@ -80,7 +80,7 @@ function geo_success(p) {
   geo_timestamp = document.getElementById('geo_timestamp');
   user_lat = document.getElementById('user_lat');
   user_long = document.getElementById('user_long');
-  if (p.coords.accuracy > 100) {
+  if (p.coords.accuracy > 1000) {
     geo_accurate = false;
     geo_accuracy_meters = document.getElementById('geo_not_accurate_meters')
     geo_accuracy_meters.innerHTML = p.coords.accuracy.toString();
