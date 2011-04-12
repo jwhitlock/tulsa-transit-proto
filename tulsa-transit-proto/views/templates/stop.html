@@ -4,14 +4,172 @@
 <head>
 <meta charset="utf-8">
 <title>Tulsa Transit Database Prototype - Stop Entry</title>
+<script src="http://maps.google.com/maps/api/js?sensor=true"></script>
+<link rel="stylesheet" type="text/css" href="/static/css/stop.css" />
 </head>
 
 <body>
+
+{% if submission %}
+<p>Thanks!  Enter another!</p>
+{% endif %}
+
+<div id='geo_loading'>
+<p class='notice'>Loading javascript...</p>
+</div>
+
+<div id='geo_checking' style='display:none;'>
+<p class='notice'>Checking if your device supports accurate geolocation.  This could take a few seconds...</p>
+</div>
+
+<div id='geo_not_available' style='display:none;'>
+<p class='error'>Your device does not support geo-location.</p>
+<p>When entering a stop location, you need a device that get an accurate latitude and longitude over GPS.  Sorry.</p>
+</div>
+
+<div id='geo_not_accurate' style='display:none;'>
+<p class='error'>You device does not support accurate geo-location.</p>
+
+<p>Your location is accurate to 
+<span id='geo_not_accurate_meters'>unknown</span>
+meters.  It need to be 100 meters or less.
+</p>
+
+</div>
+<div id="map_canvas" style="width:200px; height:200px; float:right"></div>
+
+<div id='geo_accurate' style='display:none'>
+<p>Please enter the following information for the stop:</p>
+<form method="POST">
+<label>Name:<input type='text' placeholder="15th and Lewis" autofocus></label>
+<label>GPS Latitude:<input id='geo_lat' type='text' disabled></label>
+<label>GPS Longitude:<input id='geo_long' type='text' disabled></label>
+<label>Accuracy:<input id='geo_accuracy' type='text' disabled></label>
+<label>Altitude:<input id='geo_altitude' type='text' disabled></label>
+<label>Altitude Accuracy:<input id='geo_altitude_accuracy' type='text' disabled></label>
+<label>Heading:<input id='geo_heading' type='text' disabled></label>
+<label>Speed:<input id='geo_speed' type='text' disabled></label>
+<label>Timestamp:<input id='geo_timestamp' type='text' disabled></label>
+<label>Actual Latitude:<input id='user_lat' type='text' disabled></label>
+<label>Actual Longitude:<input id='user_long' type='text' disabled></label>
+<input type="submit" value="Submit">
+</div>
+
+
 <!-- Loaded in body so page loads faster -->
 <script src="/static/js/gears_init.js"></script>
 <script src="/static/js/geo.js"></script>
-<p>I am the stop entry form.</p>
+<script type="text/javascript">
 
+// Determine if GPS-based positioning
+
+var geo_available = null;
+var geo_accurate = null;
+
+function geo_success(p) {
+  var to_hide, to_show, geo_lat, geo_long, geo_accuracy, geo_altitude, geo_altitude_accuracy, geo_heading, geo_speed, geo_timestamp;
+  geo_available = true;
+  to_hide = document.getElementById('geo_checking');
+  geo_lat = document.getElementById('geo_lat');
+  geo_long = document.getElementById('geo_long');
+  geo_accuracy = document.getElementById('geo_accuracy');
+  geo_altitude = document.getElementById('geo_altitude');
+  geo_altitude_accuracy = document.getElementById('geo_altitude_accuracy');
+  geo_heading = document.getElementById('geo_heading');
+  geo_speed = document.getElementById('geo_speed');
+  geo_timestamp = document.getElementById('geo_timestamp');
+  user_lat = document.getElementById('user_lat');
+  user_long = document.getElementById('user_long');
+  if (p.coords.accuracy > 100) {
+    geo_accurate = false;
+    geo_accuracy_meters = document.getElementById('geo_not_accurate_meters')
+    geo_accuracy_meters.innerHTML = p.coords.accuracy.toString();
+    to_show = document.getElementById('geo_not_accurate');
+  } else {
+    geo_accurate = true;
+    to_show = document.getElementById('geo_accurate');
+  }
+  to_hide.style['display']='none';
+  to_show.style['display']='block';
+  geo_lat.value = p.coords.latitude;
+  geo_long.value = p.coords.longitude;
+  geo_accuracy.value = p.coords.accuracy;
+  geo_altitude.value = p.coords.altitude;
+  geo_altitude_accuracy.value = p.coords.altitudeAccuracy;
+  geo_heading.value = p.coords.heading;
+  geo_speed.value = p.coords.speed;
+  geo_timestamp.value = p.timestamp;
+  user_lat.value = p.coords.latitude;
+  user_long.value = p.coords.longitude;
+  show_map(p);
+}
+
+function update_actual(mouseEvent) {
+  user_lat = document.getElementById('user_lat');
+  user_long = document.getElementById('user_long');
+  user_lat.value = mouseEvent.latLng.lat();
+  user_long.value = mouseEvent.latLng.lng();
+}
+
+function show_map(loc) {
+  var map_elem, map, options, center, marker_opts, marker;
+  
+  map_elem = document.getElementById('map_canvas');
+  //map_elem.style = 'width:320px; height:350px;';
+  latlng = new google.maps.LatLng(loc.coords.latitude, loc.coords.longitude);
+  options = {
+    zoom: 15,
+    center: latlng,
+    mapTypeId: google.maps.MapTypeId.ROADMAP,
+    draggable: false
+  };
+  map = new google.maps.Map(map_elem, options);
+  marker_opts = {
+    //title: 'Bus Stop',
+    draggable: true,
+    position: latlng,
+    map: map
+  };
+  marker = new google.maps.Marker(marker_opts);
+  google.maps.event.addListener(marker, 'dragend', update_actual);
+}
+
+function initialize() {
+  var latlng = new google.maps.LatLng(-34.397, 150.644);
+  var myOptions = {
+    zoom: 8,
+    center: latlng,
+    mapTypeId: google.maps.MapTypeId.ROADMAP
+  };
+  var map = new google.maps.Map(document.getElementById("map_canvas"),
+      myOptions);
+}
+
+function geo_error() {
+  to_hide = document.getElementById('geo_checking');
+  to_show = document.getElementById('geo_not_available');
+  to_hide.style['display']='none';
+  to_show.style['display']='block';
+}
+
+function check_position() {
+  to_hide = document.getElementById('geo_loading');
+  to_show = document.getElementById('geo_checking');
+  to_hide.style['display']='none';
+  to_show.style['display']='block';
+  if (geo_position_js.init()) {
+    geo_position_js.getCurrentPosition(geo_success, geo_error,
+      { enableHighAccuracy: true,
+        maximumAge: 60000
+      });
+  } else {
+    geo_error();
+  }
+}
+
+check_position();
+
+</script>
 </body>
 
 </html>
